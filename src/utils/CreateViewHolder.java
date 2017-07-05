@@ -43,6 +43,7 @@ public class CreateViewHolder extends WriteCommandAction.Simple {
     public void run() throws Throwable {
 
         generateViewHolder();
+        generateViewModel();
 
         // reformat class
         JavaCodeStyleManager styleManager = JavaCodeStyleManager.getInstance(mProject);
@@ -58,7 +59,8 @@ public class CreateViewHolder extends WriteCommandAction.Simple {
      */
     protected void generateViewHolder() {
         // view holder class
-        String holderClassName = mViewHolderName;
+        String holderClassName = mViewHolderName + Utils.getViewHolderClassName();
+        String modelClassName = mViewHolderName + Utils.getViewModelClassName();
         PsiClass innerClass = mClass.findInnerClassByName(holderClassName, false);
         if (innerClass != null) {
 //            Utils.showErrorNotification(mProject, holderClassName + " is exist!");
@@ -72,11 +74,15 @@ public class CreateViewHolder extends WriteCommandAction.Simple {
 
         // rootView
 
-        holderBuilder.append("\n\t\t// " + mViewHolderName + " create by " + mLayoutFileName + "\n\n");
+        holderBuilder.append("\n\t\t// " + holderClassName + " create by " + mLayoutFileName + "\n\n");
 
         String rootViewName = "view";
         holderBuilder.append("public " + "android.view.View " + rootViewName + ";\n");
         generator.append("this." + rootViewName + " = " + rootViewName + ";\n");
+
+        String viewModel = "model";
+        holderBuilder.append("public " + modelClassName + " " + viewModel + ";\n");
+        generator.append("this." + viewModel + " = new " + modelClassName + "(this);\n");
 
         for (Element element : mElements) {
             if (!element.used) {
@@ -107,11 +113,14 @@ public class CreateViewHolder extends WriteCommandAction.Simple {
         generatorForActivity.append("public " + holderClassName + "(android.app.Activity activity) {\n");
         generatorForActivity.append("this(activity.getWindow().getDecorView());\n");
         generatorForActivity.append("}\n");
+        StringBuilder checkChanged = new StringBuilder();
+        checkChanged.append("public void checkChanged(){");
+        checkChanged.append("this.model.bind();\n");
+        checkChanged.append("}\n");
 
         holderBuilder.append(generatorForActivity.toString());
-
         holderBuilder.append(generator.toString());
-
+        holderBuilder.append(checkChanged.toString());
 
         PsiClass viewHolder = mFactory.createClassFromText(holderBuilder.toString(), mClass);
         viewHolder.setName(holderClassName);
@@ -124,6 +133,69 @@ public class CreateViewHolder extends WriteCommandAction.Simple {
 
         mClass.add(viewHolder);
         mClass.addBefore(mFactory.createKeyword("private", mClass), mClass.findInnerClassByName(holderClassName, true));
+
+        if (innerClass != null) {
+            innerClass.delete();
+        }
+    }
+
+
+    protected void generateViewModel() {
+        // view model class
+        String holderClassName = mViewHolderName + Utils.getViewHolderClassName();
+        String modelClassName = mViewHolderName + Utils.getViewModelClassName();
+        PsiClass innerClass = mClass.findInnerClassByName(modelClassName, false);
+        if (innerClass != null) {
+//            Utils.showErrorNotification(mProject, holderClassName + " is exist!");
+//            return;
+        }
+
+        StringBuilder holderBuilder = new StringBuilder();
+
+        // generator of view holder class
+        StringBuilder bind = new StringBuilder();
+        StringBuilder generator = new StringBuilder();
+        generator.append("public " + modelClassName + "(" + holderClassName + " holder) {\n");
+
+        bind.append("void bind(){");
+
+
+        // rootView
+
+        holderBuilder.append("\n\t\t// " + modelClassName + " create by " + mLayoutFileName + "\n\n");
+
+        String viewHolder = "holder";
+        holderBuilder.append("public " + holderClassName + " " + viewHolder + ";\n");
+        generator.append("this." + viewHolder + " = " + viewHolder + ";\n");
+
+        for (Element element : mElements) {
+            if (!element.used) {
+                continue;
+            }
+
+            String viewModelName = "Bind" + element.name + "Model";
+
+            // field
+            holderBuilder.append("public " + viewModelName + " " + element.getFieldName() + ";\n");
+
+            generator.append("this." + element.getFieldName() + " = new " + viewModelName + "(" + viewHolder + "." + element.getFieldName() + ");\n");
+
+            bind.append("this." + element.getFieldName() + ".bindData(" + viewHolder + "." + element.getFieldName() + ");\n");
+        }
+        generator.append("}\n");
+        bind.append("}\n");
+
+        holderBuilder.append(generator.toString());
+
+        holderBuilder.append(bind.toString());
+
+
+        PsiClass viewModel = mFactory.createClassFromText(holderBuilder.toString(), mClass);
+        viewModel.setName(modelClassName);
+
+
+        mClass.add(viewModel);
+        mClass.addBefore(mFactory.createKeyword("public", mClass), mClass.findInnerClassByName(modelClassName, true));
 
         if (innerClass != null) {
             innerClass.delete();
@@ -263,4 +335,5 @@ public class CreateViewHolder extends WriteCommandAction.Simple {
             }
         }
     }
+
 }

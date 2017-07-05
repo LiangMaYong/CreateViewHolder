@@ -107,7 +107,7 @@ public class CreateViewHolderAction extends BaseGenerateAction implements IConfi
         for (int i = 0; i < names.length; i++) {
             sb.append(StringUtils.firstToUpperCase(names[i]));
         }
-        viewHolderName = sb.toString().replaceAll(".xml", "") + Utils.getViewHolderClassName();
+        viewHolderName = sb.toString().replaceAll(".xml", "");
         EntryList panel = new EntryList(project, editor, viewHolderName, elements, this, this);
 
         mDialog = new JFrame();

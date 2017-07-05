@@ -275,6 +275,10 @@ public class Utils {
         return PropertiesComponent.getInstance().getValue(CreateViewHolderConfig.VIEWHOLDER_CLASS_NAME, "ViewHolder");
     }
 
+    public static String getViewModelClassName() {
+        return PropertiesComponent.getInstance().getValue(CreateViewHolderConfig.VIEWMODEL_CLASS_NAME, "ViewModel");
+    }
+
     /**
      * Easier way to check if string is empty
      *
