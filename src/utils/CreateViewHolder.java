@@ -82,7 +82,6 @@ public class CreateViewHolder extends WriteCommandAction.Simple {
 
         String viewModel = "model";
         holderBuilder.append("public " + modelClassName + " " + viewModel + ";\n");
-        generator.append("this." + viewModel + " = new " + modelClassName + "(this);\n");
 
         for (Element element : mElements) {
             if (!element.used) {
@@ -107,6 +106,7 @@ public class CreateViewHolder extends WriteCommandAction.Simple {
                 }
             }
         }
+        generator.append("this." + viewModel + " = new " + modelClassName + "(this);\n");
         generator.append("}\n");
 
         StringBuilder generatorForActivity = new StringBuilder();
